@@ -8,20 +8,24 @@
 \usage{
 apa_barplot(data, ...)
 
-\method{apa_barplot}{default}(data, id, factors = NULL, dv, tendency = mean,
-  dispersion = conf_int, level = 0.95, fun_aggregate = mean,
-  na.rm = TRUE, reference = 0, intercept = NULL, args_x_axis = NULL,
+\method{apa_barplot}{default}(data, id, factors = NULL, dv,
+  tendency = mean, dispersion = conf_int, level = 0.95,
+  fun_aggregate = mean, na.rm = TRUE, use = "all.obs",
+  reference = 0, intercept = NULL, args_x_axis = NULL,
   args_y_axis = NULL, args_title = NULL, args_rect = NULL,
-  args_error_bars = NULL, args_legend = NULL, xlab = NULL, ylab = NULL,
-  main = NULL, ...)
+  args_error_bars = NULL, args_legend = NULL, xlab = NULL,
+  ylab = NULL, main = NULL, ...)
 
-\method{apa_barplot}{afex_aov}(data, tendency = mean, dispersion = conf_int,
-  fun_aggregate = mean, ...)
+\method{apa_barplot}{afex_aov}(data, tendency = mean,
+  dispersion = conf_int, fun_aggregate = mean, ...)
 }
 \arguments{
 \item{data}{A \code{data.frame} that contains the data or an object of class \code{afex_aov}}
 
-\item{...}{Further arguments that will be passed to \code{\link{plot.window}}.}
+\item{...}{Arguments passed on to \code{apa_factorial_plot}
+\describe{
+  \item{data}{A \code{data.frame} that contains the data or an object of class \code{afex_aov}}
+}}
 
 \item{id}{Character. Variable name that identifies subjects.}
 
@@ -42,7 +46,10 @@ before calculating descriptive statistics for each cell of the design. Defaults 
 
 \item{na.rm}{Logical. Specifies if missing values are removed. Defaults to \code{TRUE}.}
 
-\item{reference}{Numeric. A reference point that determines the \emph{y} coordinate of the \emph{x} axis. Useful if there exists a 'nil' value; defaults to\code{0}.}
+\item{use}{Character. Specifies a method to exclude cases if there are missing values \emph{after} aggregating.
+Possible options are \code{"all.obs"} or \code{"complete.obs"}.}
+
+\item{reference}{Numeric. A reference point that determines the \emph{y} coordinate of the \emph{x} axis. Useful if there exists a 'nil' value; defaults to \code{0}.}
 
 \item{intercept}{Numeric. Adds a horizontal line at height \code{intercept} to the plot. Can be either a single value or a matrix. For the matrix
 case, multiple lines are drawn, where the dimensions of the matrix determine the number of lines to be drawn.}
@@ -126,3 +133,4 @@ Other plots for factorial designs: \code{\link{apa_beeplot}},
   \code{\link{apa_factorial_plot}},
   \code{\link{apa_lineplot}}
 }
+\concept{plots for factorial designs}

@@ -2,23 +2,65 @@
 % Please edit documentation in R/apa_table.R
 \name{apa_table}
 \alias{apa_table}
-\alias{apa_table.latex}
-\alias{apa_table.word}
+\alias{apa_table.apa_results_table}
+\alias{apa_table.matrix}
+\alias{apa_table.list}
+\alias{apa_table.data.frame}
 \title{Prepare table for printing}
 \usage{
-apa_table(x, caption = NULL, note = NULL, stub_indents = NULL,
-  added_stub_head = NULL, col_spanners = NULL, midrules = NULL,
-  placement = "tbp", landscape = FALSE, small = FALSE, escape = NULL,
-  format.args = NULL, ...)
+apa_table(x, ...)
 
-apa_table.latex(x, caption = NULL, note = NULL, col_spanners = NULL,
-  midrules = NULL, placement = "tbp", landscape = FALSE, small = FALSE,
-  ...)
+\method{apa_table}{apa_results_table}(x, escape = FALSE, ...)
 
-apa_table.word(x, caption = NULL, note = NULL, ...)
+\method{apa_table}{matrix}(x, caption = NULL, note = NULL,
+  stub_indents = NULL, added_stub_head = NULL, col_spanners = NULL,
+  midrules = NULL, placement = "tbp", landscape = FALSE,
+  font_size = NULL, escape = TRUE, ..., format.args = NULL)
+
+\method{apa_table}{list}(x, caption = NULL, note = NULL,
+  stub_indents = NULL, added_stub_head = NULL, col_spanners = NULL,
+  midrules = NULL, placement = "tbp", landscape = FALSE,
+  font_size = NULL, escape = TRUE, merge_method = "indent", ...,
+  format.args = NULL)
+
+\method{apa_table}{data.frame}(x, caption = NULL, note = NULL,
+  stub_indents = NULL, added_stub_head = NULL, col_spanners = NULL,
+  midrules = NULL, placement = "tbp", landscape = FALSE,
+  font_size = NULL, escape = TRUE, ..., format.args = NULL)
 }
 \arguments{
 \item{x}{Object to print, can be \code{matrix}, \code{data.frame}, or \code{list}. See details.}
+
+\item{...}{Arguments passed on to \code{knitr::kable}
+\describe{
+  \item{x}{An R object, typically a matrix or data frame.}
+  \item{format}{A character string. Possible values are \code{latex},
+\code{html}, \code{markdown}, \code{pandoc}, and \code{rst}; this will be
+automatically determined if the function is called within \pkg{knitr}; it
+can also be set in the global option \code{knitr.table.format}. If
+\code{format} is a function, it must return a character string.}
+  \item{digits}{Maximum number of digits for numeric columns, passed to
+\code{round()}. This can also be a vector of length \code{ncol(x)}, to set
+the number of digits for individual columns.}
+  \item{row.names}{Logical: whether to include row names. By
+default, row names are included if \code{rownames(x)} is neither
+\code{NULL} nor identical to \code{1:nrow(x)}.}
+  \item{col.names}{A character vector of column names to be used in the table.}
+  \item{align}{Column alignment: a character vector consisting of
+ \code{'l'} (left), \code{'c'} (center) and/or \code{'r'} (right). By
+ default or if \code{align = NULL}, numeric columns are right-aligned, and
+ other columns are left-aligned. If \code{length(align) == 1L}, the string will be
+ expanded to a vector of individual letters, e.g. \code{'clc'} becomes
+\code{c('c', 'l', 'c')}, unless the output format is LaTeX.}
+  \item{caption}{The table caption.}
+  \item{format.args}{A list of arguments to be passed to \code{\link{format}()}
+to format table values, e.g. \code{list(big.mark = ',')}.}
+  \item{escape}{Boolean; whether to escape special characters when producing
+HTML or LaTeX tables.}
+}}
+
+\item{escape}{Logical. If \code{TRUE} special LaTeX characters, such as \code{\%} or \code{_}, in
+column names, row names, caption, note and table contents are escaped.}
 
 \item{caption}{Character. Caption to be printed above the table.}
 
@@ -31,7 +73,8 @@ of each list element containing the vector is used as title for indented section
 is passed to \code{\link[knitr]{kable}}; ignored if row names are omitted from the table.}
 
 \item{col_spanners}{List. A named list of vectors of length 2 that contain the first and last column to
-span. The name of each list element containing the vector is used as grouping column name.}
+span. The name of each list element containing the vector is used as grouping column name. Ignored
+in MS Word documents.}
 
 \item{midrules}{Numeric. Vector of line numbers in table (not counting column headings) that should be
 followed by a horizontal rule; ignored in MS Word documents.}
@@ -44,15 +87,12 @@ and in MS Word documents.}
 \item{landscape}{Logical. If \code{TRUE} the table is printed in landscape format; ignored in MS Word
 documents.}
 
-\item{small}{Logical. If \code{TRUE} the font size of the table content is reduced.}
-
-\item{escape}{Logical. If \code{TRUE} special LaTeX characters, such as \code{\%} or \code{_}, in
-column names, row names, caption, note and table contents are escaped. Default is \code{TRUE} if
-target document format is PDF.}
+\item{font_size}{Character. Font size to use for table contents (can be \code{tiny}, \code{scriptsize}, \code{footnotesize}, \code{small}, \code{normalsize} (default), \code{large}, \code{Large}, \code{LARGE}, \code{huge}, \code{Huge}). Ignored in MS Word documents.}
 
 \item{format.args}{List. A named list of arguments to be passed to \code{\link{printnum}} to format numeric values.}
 
-\item{...}{Further arguments to pass to \code{\link[knitr]{kable}}.}
+\item{merge_method}{Character. Determines how to merge tables if \code{x} is a \code{list}. Can be either
+\code{indent} or \code{table_spanner}.}
 }
 \description{
 Formats \code{matrices} and \code{data.frames} to report them as tables according to APA guidelines

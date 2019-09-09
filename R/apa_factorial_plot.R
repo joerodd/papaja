@@ -15,7 +15,9 @@
 #' @param fun_aggregate Closure. The function that will be used to aggregate observations within subjects and factors
 #'    before calculating descriptive statistics for each cell of the design. Defaults to \code{mean}.
 #' @param na.rm Logical. Specifies if missing values are removed. Defaults to \code{TRUE}.
-#' @param reference Numeric. A reference point that determines the \emph{y} coordinate of the \emph{x} axis. Useful if there exists a 'nil' value; defaults to\code{0}.
+#' @param use Character. Specifies a method to exclude cases if there are missing values \emph{after} aggregating.
+#'    Possible options are \code{"all.obs"} or \code{"complete.obs"}.
+#' @param reference Numeric. A reference point that determines the \emph{y} coordinate of the \emph{x} axis. Useful if there exists a 'nil' value; defaults to \code{0}.
 #' @param intercept Numeric. Adds a horizontal line at height \code{intercept} to the plot. Can be either a single value or a matrix. For the matrix
 #'    case, multiple lines are drawn, where the dimensions of the matrix determine the number of lines to be drawn.
 #' @param plot Character. A vector specifying which elements of the plot should be plotted. Available options are
@@ -34,7 +36,7 @@
 #' @param ylab Character or expression. Label for \emph{y} axis.
 #' @param main Character or expression. For up to two factors, simply specify the main title. If you stratify the data by more than two factors,
 #' either specify a single value that will be added to automatically generated main title, \emph{or} specify an array of multiple titles, one for each plot area.
-#' @param ... Further arguments that will be passed to \code{\link{plot.window}}.
+#' @inheritDotParams graphics::plot.window
 #' @details
 #'    The measure of dispersion can be either \code{conf_int} for between-subjects confidence intervals, \code{se} for standard errors,
 #'    or any other standard function. For within-subjects confidence intervals, specify \code{wsci} or \code{within_subjects_conf_int}.
@@ -90,6 +92,7 @@ apa_factorial_plot.default <- function(
   , level = 0.95
   , fun_aggregate = mean
   , na.rm = TRUE
+  , use = "all.obs"
   , reference = 0
   , intercept = NULL
   , args_x_axis = NULL
@@ -120,6 +123,10 @@ apa_factorial_plot.default <- function(
   validate(level, check_class = "numeric", check_range = c(0,1))
   validate(fun_aggregate, check_class = "function", check_length = 1, check_NA = FALSE)
   validate(na.rm, check_class = "logical", check_length = 1)
+  validate(use, check_class = "character", check_length = 1)
+  if(!use%in%c("all.obs", "complete.obs")) {
+    stop('Parameter `use` must be either "all.obs" or "complete.obs".')
+  }
   validate(data, check_class = "data.frame", check_cols = c(id, dv, factors), check_NA = FALSE)
   if(!is.null(intercept)) validate(intercept, check_mode = "numeric", check_NA = FALSE)
   if(!is.null(args_x_axis)) validate(args_x_axis, check_class = "list")
@@ -160,6 +167,16 @@ apa_factorial_plot.default <- function(
   # Handling of dependent variable:
   data[[dv]] <- as.numeric(data[[dv]])
 
+  # Check if specified factors contain more than one level after applying `droplevels`
+  for (i in c(factors)) {
+    nl <- nlevels(data[[i]])
+    if(nl < 2) {
+      warning(paste0("Factor \"", i, "\" contains only ", nl, " level" , ifelse(nl==1, "", "s"), " and is thus ignored."))
+      factors <- setdiff(factors, i)
+    }
+  }
+
+
   variable_label(data) <- original_labels
 
   ellipsis <- list(...)
@@ -193,6 +210,7 @@ apa_factorial_plot.default <- function(
        , args_lines = args_lines
        , args_error_bars = args_error_bars
        , args_legend = args_legend
+       , jit = jit
        , xlab = if(!is.null(xlab)){xlab}else{combine_plotmath(list(variable_label(data[[factors[1]]]), ""))}
        , ylab = if(!is.null(ylab)){ylab}else{combine_plotmath(list(variable_label(data[[dv]]), ""))}
        , frame.plot = FALSE
@@ -270,6 +288,22 @@ apa_factorial_plot.default <- function(
     aggregated <- data
   }
 
+  # ----------------------------------------------------------------------------
+  # Check if there are incomplete observations and eventually remove them
+  if(use=="complete.obs") {
+    # excluded_id <- sort(unique(aggregated[[id]][is.na(aggregated[[dv]])]))
+    #
+    # data <- data[!data[[id]]%in%excluded_id, ]
+    # aggregated <- aggregated[!aggregated[[id]]%in%excluded_id, ]
+    tmp <- determine_within_between(data = aggregated, id = id, factors = factors)
+    aggregated <- complete_observations(data = aggregated, id = id, within = tmp$within, dv = dv)
+    removed_cases <- unlist(attributes(aggregated)[c("removed_cases_implicit_NA", "removed_cases_explicit_NA")])
+    if(!is.null(removed_cases)) {
+      excluded_id <- sort(unique(removed_cases))
+      data <- data[!data[[id]] %in% excluded_id, ]
+    }
+  }
+
   ## Calculate central tendencies ----------------------------------------------
   if(use_dplyr) {
     yy <- fast_aggregate(data = aggregated, factors = factors, dv = dv, fun = tendency)
@@ -316,12 +350,12 @@ apa_factorial_plot.default <- function(
         min(
           0
           , y.values[, "lower_limit"]
-          , aggregated[, dv]
+          , aggregated[[dv]]
           , na.rm = TRUE
         )
         , max(
           y.values[, "upper_limit"]
-          , aggregated[, dv]
+          , aggregated[[dv]]
           , na.rm = TRUE
         )
       )
@@ -637,7 +671,9 @@ apa_factorial_plot_single <- function(aggregated, y.values, id, dv, factors, int
 
   do.call("title", args_title)
 
-  if("swarms" %in% ellipsis$plot){
+  if("swarms" %in% ellipsis$plot) {
+    if(!package_available("beeswarm")) stop("Please install the package 'beeswarm' to plot beeswarms.")
+
     args_swarm <- defaults(
       args_swarm
       , set.if.null = list(
@@ -855,13 +891,17 @@ apa_factorial_plot.afex_aov <- function(
 
   args <- attributes(data)
 
+  # Change in upcoming afex release (https://github.com/singmann/afex/commit/80563ee443b9005f176ee5f9fcbd07fd89a642e6#diff-e88193a056961d33007d7390f33df59e)
+  between <- if(!is.null(names(args$between))) names(args$between) else args$between
+  within <- if(!is.null(names(args$within))) names(args$within) else args$within
+
   ellipsis <- defaults(
     ellipsis
     , set = list(
       "data" = data$data$long
       , "id" = args$id
       , "dv" = args$dv
-      , "factors" = c(args$between, args$within)
+      , "factors" = c(unlist(between), unlist(within))
       , "tendency" = substitute(tendency)
       , "dispersion" = substitute(dispersion)
       , "fun_aggregate" = substitute(fun_aggregate)

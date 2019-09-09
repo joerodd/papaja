@@ -16,7 +16,7 @@
 #'    Other confidence intervals can be supplied as a \code{vector} of length 2 (lower and upper boundary, respectively)
 #'    with attribute \code{conf.level}, e.g., when calculating bootstrapped confidence intervals.
 #' @param in_paren Logical. Indicates if the formatted string will be reported inside parentheses. See details.
-#' @param ... Further arguments to pass to \code{\link{printnum}} to format the estimate.
+#' @inheritDotParams printnum
 #' @details The function should work on a wide range of \code{htest} objects. Due to the large number of functions
 #'    that produce these objects and their idiosyncrasies, the produced strings may sometimes be inaccurate. If you
 #'    experience inaccuracies you may report these \href{https://github.com/crsh/papaja/issues}{here} (please include
@@ -127,8 +127,8 @@ apa_print.htest <- function(
     if(is.null(est_name)) {
       warning("Cannot determine name of estimate supplied in ", deparse(substitute(x)), " of class 'htest'. Estimate is omitted from output string. Please set parameter 'est_name' to obtain an estimate.")
       est <- NULL
-    } else if(!is.null(names(x$estimate)) && convert_stat_name(names(x$estimate)) == "\\Delta M") {
-      est <- do.call(function(...) printnum(diff(x$estimate), ...), ellipsis)
+    } else if(!is.null(names(x$estimate)) && est_name == "\\Delta M") {
+      est <- do.call(function(...) printnum(diff(rev(x$estimate)), ...), ellipsis)
     } else if(length(x$estimate) == 1) {
       if(est_name %in% c("r", "r_{\\mathrm{s}}", "\\uptau") & is.null(ellipsis$gt1)) ellipsis$gt1 <- FALSE
       est <- do.call(function(...) printnum(x$estimate, ...), ellipsis)

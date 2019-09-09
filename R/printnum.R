@@ -8,9 +8,12 @@
 #' @param margin Integer. If \code{x} is a matrix, the function is applied either across rows (\code{margin = 1})
 #'    or columns (\code{margin = 2}).
 #' @param na_string Character. String to print if element of \code{x} is \code{NA}.
+#' @param use_math Logical. Indicates whether to insert \code{$} into the output so that \code{Inf} or scientific
+#'    notation is rendered correctly.
 #' @param numerals Logical. Indicates if integer should be returned as words.
 #' @param capitalize Logical. Indicates if first letter should be capitalized. Ignored if \code{numberals = TURE}.
-#' @param ... Further arguments that may be passed to \code{\link{formatC}}
+#' @inheritDotParams base::formatC -x
+#'
 #' @details If \code{x} is a vector, \code{digits}, \code{gt1}, and \code{zero} can be vectors
 #'    according to which each element of the vector is formated. Parameters are recycled if length of \code{x}
 #'    exceeds length of the parameter vectors. If \code{x} is a matrix, the vectors specify the formating
@@ -34,8 +37,14 @@ printnum <- function(x, ...) {
 #' @rdname printnum
 #' @export
 
-printnum.default <- function(x, ...) {
-  printnum.numeric(x, ...)
+printnum.default <- function(x, na_string = getOption("papaja.na_string"), ...) {
+  if(is.null(x)) stop("The parameter 'x' is NULL. Please provide a value for 'x'")
+
+  x <- as.character(x)
+  if(anyNA(x)) {
+    x[is.na(x)] <- na_string
+  }
+  x
 }
 
 
@@ -94,7 +103,7 @@ printnum.integer <- function(x, numerals = TRUE, capitalize = FALSE, na_string =
     } else {
       required_number_word <- ((n_digits + 2) %/% 3) - 1
       if (required_number_word > length(number_names)) {
-        stop("Number is to large.")
+        stop("Number is too large.")
       }
       number <- paste(
         Recall(collapse(digits[n_digits:(3*required_number_word + 1)]))
@@ -143,6 +152,7 @@ printnum.numeric <- function(
   , zero = TRUE
   , margin = 1
   , na_string = getOption("papaja.na_string")
+  , use_math = TRUE
   , ...
 ) {
   if(is.null(x)) stop("The parameter 'x' is NULL. Please provide a value for 'x'")
@@ -153,23 +163,26 @@ printnum.numeric <- function(
   validate(zero, check_class = "logical")
   validate(margin, check_class = "numeric", check_integer = TRUE, check_length = 1, check_range = c(1, 2))
   validate(na_string, check_class = "character", check_length = 1)
-
-  ellipsis$x <- x
-  ellipsis$gt1 <- gt1
-  ellipsis$zero <- zero
-  ellipsis$na_string <- na_string
+  validate(use_math, check_class = "logical")
 
   ellipsis <- defaults(
     ellipsis
+    , set = list(
+      x = x
+      , gt1 = gt1
+      , zero = zero
+      , na_string = na_string
+      , use_math = use_math
+    )
     , set.if.null = list(
       digits = 2
       , big.mark = ","
     )
   )
 
-  if(!is.null(ellipsis$digits)) {
+  # if(!is.null(ellipsis$digits)) { # if not necessary because default is set beforehand
     validate(ellipsis$digits, "digits", check_class = "numeric", check_integer = TRUE, check_range = c(0, Inf))
-  }
+  #}
 
   if(length(x) > 1) {
     # print_args <- list(digits = digits, gt1 = gt1, zero = zero)
@@ -179,26 +192,10 @@ printnum.numeric <- function(
     }
   }
 
-  if(is.matrix(x) | is.data.frame(x)) {
-    x_out <- apply(
-      X = x
-      , MARGIN = (3 - margin) # Parameters are applied according to margin
-      , FUN = function(x) {
-        ellipsis$x <- x
-        do.call("printnum", ellipsis)
-      }
-      # Inception!
-    )
+    # not necessary because of.data.frame-method:
+    # if(is.data.frame(x)) x_out <- as.data.frame(x_out)
 
-    if(margin == 2 || nrow(x) == 1) {
-      x_out <- t(x_out) # Reverse transposition caused by apply
-      dimnames(x_out) <- dimnames(x)
-    }
-
-    if(!is.matrix(x_out) && is.matrix(x)) x_out <- as.matrix(x_out, ncol = ncol(x))
-    if(is.data.frame(x)) x_out <- as.data.frame(x_out)
-
-  } else if(is.numeric(x) & length(x) > 1) {
+  if(is.numeric(x) & length(x) > 1) {
     # print_args <- lapply(print_args, rep, length = length(x)) # Recycle arguments
     x_out <- sapply(seq_along(x), vprintnumber, x)
     names(x_out) <- names(x)
@@ -209,12 +206,92 @@ printnum.numeric <- function(
 }
 
 
-printnumber <- function(x, gt1 = TRUE, zero = TRUE, na_string = "", ...) {
+#' @rdname printnum
+#' @export
+
+printnum.data.frame <- function(
+  x
+  , margin = 2
+  , ... # cleverly recycle (column-wise) over all possible parameters
+) {
+
+  if(margin == 1) {
+    ellipsis <- list(...)
+    ellipsis$x <- x
+    ellipsis$margin <- margin
+    x_out <- do.call("printnum.matrix", ellipsis)
+  } else {
+    x_out <- mapply(
+      FUN = printnum
+      , x = x
+      , ...
+      , SIMPLIFY = FALSE
+    )
+  }
+
+  x_out <- as.data.frame(
+    x_out
+    , stringsAsFactors = FALSE
+    , check.names = FALSE
+    , fix.empty.names = FALSE
+  )
+
+  rownames(x_out) <- rownames(x)
+  x_out
+}
+
+#' @rdname printnum
+#' @export
+
+printnum.matrix <- function(
+  x
+  , margin = 2
+  , ...
+) {
+
+  ellipsis <- list(...)
+
+  x_out <- apply(
+    X = x
+    , MARGIN = (3 - margin) # Parameters are applied according to margin
+    , FUN = function(x) {
+      ellipsis$x <- x
+      do.call("printnum", ellipsis)
+    }
+    # Inception!
+  )
+
+  if(margin == 2 || nrow(x) == 1) {
+    x_out <- t(x_out) # Reverse transposition caused by apply
+    dimnames(x_out) <- dimnames(x)
+  }
+
+  if(!is.matrix(x_out)) x_out <- matrix(x_out, ncol = ncol(x))
+
+  x_out
+}
+
+
+#' @rdname printnum
+#' @export
+
+printnum.papaja_labelled <-function(x, ...){
+  x_out <- NextMethod("printnum")
+  variable_label(x_out) <- variable_label(x)
+  x_out
+}
+
+
+printnumber <- function(x, gt1 = TRUE, zero = TRUE, na_string = "", use_math = TRUE, ...) {
 
   ellipsis <- list(...)
   validate(x, check_class = "numeric", check_NA = FALSE, check_length = 1, check_infinite = FALSE)
   if(is.na(x)) return(na_string)
-  if(is.infinite(x)) return("$\\infty$")
+  if(is.infinite(x)) {
+    x_out <- paste0(ifelse(x < 0, "-", ""), "\\infty")
+    if(use_math) x_out <- paste0("$", x_out, "$")
+    return(x_out)
+  }
   if(!is.null(ellipsis$digits)) {
     validate(ellipsis$digits, "digits", check_class = "numeric", check_integer = TRUE, check_length = 1, check_range = c(0, Inf))
   }

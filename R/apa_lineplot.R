@@ -4,6 +4,7 @@
 #' a factorial design and sets APA-friendly defaults.
 #'
 #' @inherit apa_factorial_plot
+#' @inheritDotParams apa_factorial_plot
 #'
 #' @family plots for factorial designs
 #' @examples
@@ -57,7 +58,7 @@ apa_lineplot.default <- function(
   , level = 0.95
   , fun_aggregate = mean
   , na.rm = TRUE
-  , reference = 0
+  , use = "all.obs"
   , intercept = NULL
   , args_x_axis = NULL
   , args_y_axis = NULL
@@ -84,6 +85,7 @@ apa_lineplot.default <- function(
       , level = level
       , fun_aggregate = substitute(fun_aggregate)
       , na.rm = na.rm
+      , use = use
       , intercept = intercept
       , args_x_axis = args_x_axis
       , args_y_axis = args_y_axis

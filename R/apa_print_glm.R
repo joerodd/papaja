@@ -15,7 +15,7 @@
 #'    See details.
 #' @param observed_predictors Logical. Indicates whether predictor variables were observed. See details.
 #' @param in_paren Logical. Indicates if the formatted string will be reported inside parentheses. See details.
-#' @param ... Further arguments to pass to \code{\link{printnum}} to format the estimate.
+#' @inheritDotParams printnum
 #' @details
 #'    The coefficients names are sanitized to facilitate their use as list names. Parentheses
 #'    are omitted and other non-word characters are replaced by \code{_} (see \code{\link{sanitize_terms}}).
@@ -55,11 +55,11 @@
 #' @references
 #'    Steiger (2004). Beyond the F Test: Effect Size Confidence Intervals and Tests of Close Fit in the Analysis of
 #'    Variance and Contrast Analysis. \emph{Psychological Methods}, 9(2), 164-182.
-#'    doi:\href{http://dx.doi.org/10.1037/1082-989X.9.2.164}{10.1037/1082-989X.9.2.164}
+#'    doi:\href{https://doi.org/10.1037/1082-989X.9.2.164}{10.1037/1082-989X.9.2.164}
 #'
 #'    Kelley, K. (2007). Confidence intervals for standardized effect sizes: Theory, application, and
 #'    implementation. \emph{Journal of Statistical Software}, 20(8), 1-24.
-#'    doi:\href{http://doi.org/10.18637/jss.v020.i08}{10.18637/jss.v020.i08}
+#'    doi:\href{https://doi.org/10.18637/jss.v020.i08}{10.18637/jss.v020.i08}
 #'
 #' @family apa_print
 #' @seealso \code{\link[stats]{confint}}, \code{\link[MBESS]{ci.pvaf}}

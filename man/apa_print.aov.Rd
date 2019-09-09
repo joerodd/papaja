@@ -19,14 +19,16 @@ apa_print.aovlist(x, ...)
 
 apa_print.summary.aovlist(x, ...)
 
-apa_print.Anova.mlm(x, correction = getOption("papaja.sphericity_correction"),
+apa_print.Anova.mlm(x,
+  correction = getOption("papaja.sphericity_correction"),
   intercept = FALSE, ...)
 
 apa_print.summary.Anova.mlm(x,
-  correction = getOption("papaja.sphericity_correction"), intercept = FALSE,
-  ...)
+  correction = getOption("papaja.sphericity_correction"),
+  intercept = FALSE, ...)
 
-apa_print.afex_aov(x, correction = getOption("papaja.sphericity_correction"),
+apa_print.afex_aov(x,
+  correction = getOption("papaja.sphericity_correction"),
   intercept = FALSE, ...)
 
 apa_print.anova(x, ...)
@@ -34,7 +36,16 @@ apa_print.anova(x, ...)
 \arguments{
 \item{x}{Output object. See details.}
 
-\item{...}{Additional arguments passed to to \code{\link{print_anova}}.}
+\item{...}{Arguments passed on to \code{print_anova}
+\describe{
+  \item{x}{Data.frame. A \code{data.frame} of class \code{apa_variance_table} as returned by \code{\link{arrange_anova}}.}
+  \item{intercept}{Logical. Indicates if intercept test should be included in output.}
+  \item{es}{Character. The effect-size measure to be calculated; can be either \code{ges} for generalized eta-squared, \code{pes} for partial eta-squared or \code{es} for eta-squared.
+Note that eta-squared is calculated correctly if and only if the design is balanced.}
+  \item{mse}{Logical. Indicates if mean squared errors should be included in output. Default is \code{TRUE}.}
+  \item{observed}{Character. The names of the factors that are observed, (i.e., not manipulated). Necessary for calculation of generalized eta-squared; otherwise ignored.}
+  \item{in_paren}{Logical. Indicates if the formated string will be reported inside parentheses. See details.}
+}}
 
 \item{correction}{Character. In the case of repeated-measures ANOVA, the type of sphericity correction to be used (\code{GG} for Greenhouse-Geisser or \code{HF} for Huyn-Feldt methods or \code{none}). Default is \code{GG}.}
 
@@ -69,14 +80,16 @@ The factor names are sanitized to facilitate their use as list names (see Value 
 }
 \references{
 Bakeman, R. (2005). Recommended effect size statistics for repeated measures designs. \emph{Behavior Research Methods}
-   , 37 (3), 379--384. doi:\href{http://dx.doi.org/10.3758/BF03192707}{10.3758/BF03192707}
+   , 37 (3), 379--384. doi:\href{https://doi.org/10.3758/BF03192707}{10.3758/BF03192707}
 }
 \seealso{
 \code{\link{aov}}, \code{\link[car]{Anova}}, \code{\link{apa_print.list}}
 
 Other apa_print: \code{\link{apa_print.BFBayesFactor}},
+  \code{\link{apa_print.emmGrid}},
   \code{\link{apa_print.glht}},
   \code{\link{apa_print.glm}},
   \code{\link{apa_print.htest}},
   \code{\link{apa_print.list}}, \code{\link{apa_print}}
 }
+\concept{apa_print}

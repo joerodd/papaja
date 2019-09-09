@@ -219,7 +219,7 @@ test_that(
 test_that(
   "Within-subjects confidence intervals: Cousineau vs. Morey method"
   , {
-    aggregated_data <- aggregate(formula = yield ~ N + block, data = npk, FUN = mean)
+    aggregated_data <- stats::aggregate(formula = yield ~ N + block, data = npk, FUN = mean)
     object_1 <- wsci(data = aggregated_data, id = "block", dv = "yield", factors = c("N"), method = "Cousineau", level = .98)
     object_2 <- wsci(data = aggregated_data, id = "block", dv = "yield", factors = c("N"), method = "Morey", level = .98)
 
@@ -240,6 +240,28 @@ test_that(
     expect_identical(
       object = object_1$yield
       , expected = object_2$yield /sqrt(2)
+    )
+  }
+)
+
+test_that(
+  "Within-subjects confidence intervals: Handling of implicit and explicit NAs"
+  , {
+    # Implicit NAs
+    data <- npk
+    data$yield[2] <- NA
+    aggregated <- stats::aggregate(formula = yield ~ N + P + block, data = data, FUN = mean)
+    expect_warning(
+      wsci(data = aggregated, id = "block", dv = "yield", factors = c("N", "P"))
+      , "Because of incomplete data, the following cases were removed from calculation of within-subjects confidence intervals:\nblock: 1"
+    )
+    # Explicit NAs
+    data <- npk
+    aggregated <- stats::aggregate(formula = yield ~ N + P + block, data = data, FUN = mean)
+    aggregated$yield[5] <- NA
+    expect_warning(
+      wsci(data = aggregated, id = "block", dv = "yield", factors = c("N", "P"))
+      , "Because of NAs in the dependent variable, the following cases were removed from calculation of within-subjects confidence intervals:\nblock: 2"
     )
   }
 )

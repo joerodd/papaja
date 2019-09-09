@@ -7,7 +7,7 @@
 #' @param correction Character. In the case of repeated-measures ANOVA, the type of sphericity correction to be used (\code{GG} for Greenhouse-Geisser or \code{HF} for Huyn-Feldt methods or \code{none}). Default is \code{GG}.
 #' @param intercept Logical. Indicates if intercept test should be included in output.
 #' @inheritParams print_anova
-#' @param ... Additional arguments passed to to \code{\link{print_anova}}.
+#' @inheritDotParams print_anova
 #' @details
 #'    The factor names are sanitized to facilitate their use as list names (see Value section). Parentheses
 #'    are omitted and other non-word characters are replaced by \code{_}.
@@ -27,7 +27,7 @@
 #'    }
 #' @references
 #'    Bakeman, R. (2005). Recommended effect size statistics for repeated measures designs. \emph{Behavior Research Methods}
-#'    , 37 (3), 379--384. doi:\href{http://dx.doi.org/10.3758/BF03192707}{10.3758/BF03192707}
+#'    , 37 (3), 379--384. doi:\href{https://doi.org/10.3758/BF03192707}{10.3758/BF03192707}
 #'
 #' @family apa_print
 #' @seealso \code{\link{aov}}, \code{\link[car]{Anova}}, \code{\link{apa_print.list}}
